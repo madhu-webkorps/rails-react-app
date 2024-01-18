@@ -11,8 +11,21 @@ jobs:
         with:
           ruby-version: 3.0.0
 
-      - name: Install dependencies
-        run: bundle install
+      - name: Install bundler
+        run: |
+          gem install bundler
 
-      - name: Run tests
-        run: bundle exec rake
+      - name: Cache gems
+        id: cache-gems
+        uses: actions/cache@v2
+        with:
+          path: vendor/bundle
+
+      - name: Setup env
+        run: cp config/application.example.yml config/application.yml
+
+      - name: Prepare db
+        run: bundle exec rake db:create
+
+      - name: Test
+        run: bundle exec rails test
