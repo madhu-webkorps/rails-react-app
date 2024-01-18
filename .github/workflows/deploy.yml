@@ -14,15 +14,15 @@ jobs:
       - name: Install bundler
         run: |
           gem install bundler
+          bundle install
 
-      - name: Cache gems
-        id: cache-gems
-        uses: actions/cache@v2
+      - name: Set up PostgreSQL
+        uses: apocalyptech/postgres-setup-action@v2
         with:
-          path: vendor/bundle
+          postgres-version: '13'
 
-      - name: Setup env
-        run: cp config/application.example.yml config/application.yml
+      - name: Set up environment variables
+        run: echo "DATABASE_URL=postgres://user:password@localhost:5432/your_database" >> $GITHUB_ENV
 
       - name: Prepare db
         run: bundle exec rake db:create
