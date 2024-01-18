@@ -3,7 +3,24 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
- 
+    services:
+      postgres:
+        image: postgres
+        ports:
+          - "5432:5432"
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      RAILS_ENV: test
+      RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
+
     steps:
       - uses: actions/checkout@v1
       - name: Setup Ruby
@@ -16,16 +33,15 @@ jobs:
           gem install bundler
           bundle install
 
-      - name: Set up PostgreSQL
-        uses: apocalyptech/postgres-setup-action@v2
-        with:
-          postgres-version: '13'
+      - name: Set up primary database
+        env:
+          POSTGRES_DB: rails_react_test
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/rails_react_test"
+        run: bin/rails db:create:primary db:migrate:primary
 
-      - name: Set up environment variables
-        run: echo "DATABASE_URL=postgres://user:password@localhost:5432/your_database" >> $GITHUB_ENV
-
-      - name: Prepare db
-        run: bundle exec rake db:create
-
-      - name: Test
-        run: bundle exec rails test
+      - name: Run tests
+        env:
+          PG_USER: postgres
+          PG_PASSWORD: postgres
+        run: |
+          bundle exec rspec
